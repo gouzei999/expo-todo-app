@@ -210,14 +210,6 @@ export const useTaskStore = create<TaskState>()(
     {
       name: 'todo-tasks-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      // Validate stored data on hydration to prevent crashes from corrupted data
-      onRehydrateStorage: () => {
-        return (state, error) => {
-          if (error || !state) return;
-          // Filter out invalid tasks from persisted data
-          state.tasks = (state.tasks || []).filter(isValidTask);
-        };
-      },
     }
   )
 );
