@@ -2,36 +2,32 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Task } from '../types/task';
 import { CATEGORIES } from '../constants';
+import { formatShortDateTime } from '../utils/dateFormatter';
 
 interface TaskCardProps {
   task: Task;
   onToggleComplete: (id: string) => void;
   onLongPress?: (task: Task) => void;
-  drag?: () => void;
-  isActive?: boolean;
+  onMoveUp?: (task: Task) => void;
+  onMoveDown?: (task: Task) => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
 export default function TaskCard({
   task,
   onToggleComplete,
   onLongPress,
-  drag,
-  isActive,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
 }: TaskCardProps) {
   const categoryLabel = CATEGORIES.find((c) => c.key === task.category)?.label || '';
 
   return (
-    <TouchableOpacity
-      style={[
-        styles.container,
-        { backgroundColor: task.backgroundColor },
-        isActive && styles.active,
-      ]}
-      onPress={() => onToggleComplete(task.id)}
-      onLongPress={() => onLongPress?.(task)}
-      activeOpacity={0.7}
-      delayLongPress={drag ? 200 : 500}
-    >
+    <View style={[styles.container, { backgroundColor: task.backgroundColor }]}>
+      {/* Checkbox */}
       <TouchableOpacity
         style={styles.checkbox}
         onPress={() => onToggleComplete(task.id)}
@@ -41,7 +37,13 @@ export default function TaskCard({
         </View>
       </TouchableOpacity>
 
-      <View style={styles.content}>
+      {/* Content */}
+      <TouchableOpacity
+        style={styles.content}
+        onPress={() => onToggleComplete(task.id)}
+        onLongPress={() => onLongPress?.(task)}
+        activeOpacity={0.7}
+      >
         <Text
           style={[styles.title, task.isCompleted && styles.titleCompleted]}
           numberOfLines={2}
@@ -52,27 +54,32 @@ export default function TaskCard({
           <Text style={styles.category}>{categoryLabel}</Text>
           {task.completedAt && (
             <Text style={styles.completedTime}>
-              完成于 {new Date(task.completedAt).toLocaleString('zh-CN', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
+              完成于 {formatShortDateTime(task.completedAt)}
             </Text>
           )}
         </View>
-      </View>
+      </TouchableOpacity>
 
-      {drag && (
-        <TouchableOpacity
-          style={styles.dragHandle}
-          onLongPress={drag}
-          delayLongPress={0}
-        >
-          <Text style={styles.dragHandleText}>⋮⋮</Text>
-        </TouchableOpacity>
+      {/* Reorder Buttons */}
+      {(onMoveUp || onMoveDown) && (
+        <View style={styles.reorderButtons}>
+          <TouchableOpacity
+            style={[styles.reorderBtn, isFirst && styles.reorderBtnDisabled]}
+            onPress={() => onMoveUp?.(task)}
+            disabled={isFirst}
+          >
+            <Text style={[styles.reorderArrow, isFirst && styles.reorderArrowDisabled]}>▲</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.reorderBtn, isLast && styles.reorderBtnDisabled]}
+            onPress={() => onMoveDown?.(task)}
+            disabled={isLast}
+          >
+            <Text style={[styles.reorderArrow, isLast && styles.reorderArrowDisabled]}>▼</Text>
+          </TouchableOpacity>
+        </View>
       )}
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -89,11 +96,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
-  },
-  active: {
-    shadowOpacity: 0.2,
-    elevation: 8,
-    transform: [{ scale: 1.02 }],
   },
   checkbox: {
     marginRight: 12,
@@ -147,13 +149,27 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#AAA',
   },
-  dragHandle: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  reorderButtons: {
+    marginLeft: 4,
+    gap: 4,
   },
-  dragHandleText: {
-    fontSize: 18,
+  reorderBtn: {
+    width: 32,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 4,
+    backgroundColor: '#F0F0F0',
+  },
+  reorderBtnDisabled: {
+    backgroundColor: '#FAFAFA',
+    opacity: 0.4,
+  },
+  reorderArrow: {
+    fontSize: 11,
+    color: '#666',
+  },
+  reorderArrowDisabled: {
     color: '#CCC',
-    letterSpacing: 2,
   },
 });

@@ -1,12 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import DraggableFlatList, {
-  ScaleDecorator,
-  RenderItemParams,
-} from 'react-native-draggable-flatlist';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, FlatList } from 'react-native';
 import { useTaskStore } from '../store/TaskStore';
 import { Category, Task } from '../types/task';
-import { formatWeekLabel, formatDate, getCurrentWeekStart } from '../utils/weekHelper';
+import { formatDate, getCurrentWeekStart } from '../utils/weekHelper';
 import { CATEGORIES } from '../constants';
 import TaskCard from '../components/TaskCard';
 import TaskForm from '../components/TaskForm';
@@ -23,20 +19,12 @@ export default function WeeklyScreen() {
   const addTask = useTaskStore((s) => s.addTask);
   const toggleComplete = useTaskStore((s) => s.toggleComplete);
   const deleteTask = useTaskStore((s) => s.deleteTask);
-  const updateSortOrder = useTaskStore((s) => s.updateSortOrder);
+  const moveTask = useTaskStore((s) => s.moveTask);
   const tasks = useTaskStore((s) => s.getActiveTasksByCategory(weekStartStr, activeCategory));
 
   const handleWeekChange = useCallback((newWeekStart: Date) => {
     setCurrentWeekStart(newWeekStart);
   }, []);
-
-  const handleDragEnd = useCallback(
-    ({ data }: { data: Task[] }) => {
-      const reordered = data.map((item, index) => ({ ...item, sortOrder: index }));
-      updateSortOrder(reordered);
-    },
-    [updateSortOrder]
-  );
 
   const handleToggleComplete = useCallback(
     (id: string) => {
@@ -74,6 +62,20 @@ export default function WeeklyScreen() {
     [deleteTask]
   );
 
+  const handleMoveUp = useCallback(
+    (task: Task) => {
+      moveTask(task.id, task.weekStart, task.category, 'up');
+    },
+    [moveTask]
+  );
+
+  const handleMoveDown = useCallback(
+    (task: Task) => {
+      moveTask(task.id, task.weekStart, task.category, 'down');
+    },
+    [moveTask]
+  );
+
   const handleAddTask = useCallback(
     (title: string, category: Category, backgroundColor: string) => {
       addTask(title, category, weekStartStr, backgroundColor);
@@ -83,18 +85,18 @@ export default function WeeklyScreen() {
   );
 
   const renderItem = useCallback(
-    ({ item, drag, isActive }: RenderItemParams<Task>) => (
-      <ScaleDecorator>
-        <TaskCard
-          task={item}
-          onToggleComplete={handleToggleComplete}
-          onLongPress={handleLongPress}
-          drag={drag}
-          isActive={isActive}
-        />
-      </ScaleDecorator>
+    ({ item, index }: { item: Task; index: number }) => (
+      <TaskCard
+        task={item}
+        onToggleComplete={handleToggleComplete}
+        onLongPress={handleLongPress}
+        onMoveUp={handleMoveUp}
+        onMoveDown={handleMoveDown}
+        isFirst={index === 0}
+        isLast={index === tasks.length - 1}
+      />
     ),
-    [handleToggleComplete, handleLongPress]
+    [handleToggleComplete, handleLongPress, handleMoveUp, handleMoveDown, tasks.length]
   );
 
   return (
@@ -126,9 +128,8 @@ export default function WeeklyScreen() {
       {tasks.length === 0 ? (
         <EmptyState message={`暂无${activeCategory === 'work' ? '工作' : '生活'}任务\n点击右下角 + 添加`} />
       ) : (
-        <DraggableFlatList
+        <FlatList
           data={tasks}
-          onDragEnd={handleDragEnd}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}

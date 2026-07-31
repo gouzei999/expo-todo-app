@@ -4,6 +4,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { RouteProp } from '@react-navigation/native';
 import { useTaskStore } from '../store/TaskStore';
 import { CATEGORIES } from '../constants';
+import { formatDateTime } from '../utils/dateFormatter';
 
 type RootStackParamList = {
   MainTabs: undefined;
@@ -79,7 +80,7 @@ export default function ReviewScreen() {
           <View style={styles.metaItem}>
             <Text style={styles.metaLabel}>创建时间</Text>
             <Text style={styles.metaValue}>
-              {new Date(task.createdAt).toLocaleString('zh-CN')}
+              {formatDateTime(task.createdAt)}
             </Text>
           </View>
         </View>
@@ -88,7 +89,7 @@ export default function ReviewScreen() {
             <Text style={styles.metaLabel}>完成时间</Text>
             <Text style={styles.metaValue}>
               {task.completedAt
-                ? new Date(task.completedAt).toLocaleString('zh-CN')
+                ? formatDateTime(task.completedAt)
                 : '—'}
             </Text>
           </View>
