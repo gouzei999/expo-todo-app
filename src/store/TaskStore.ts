@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../utils/idGenerator';
 import { Task, Category } from '../types/task';
 import { DEFAULT_BACKGROUND_COLOR } from '../constants';
 import { PRESET_COLORS } from '../utils/colors';
@@ -70,7 +70,7 @@ export const useTaskStore = create<TaskState>()(
         const maxOrder = existingTasks.reduce((max, t) => Math.max(max, t.sortOrder), -1);
 
         const newTask: Task = {
-          id: uuidv4(),
+          id: generateId(),
           title: trimmedTitle,
           category,
           weekStart,
