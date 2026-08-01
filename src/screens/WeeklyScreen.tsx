@@ -1,5 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, FlatList } from 'react-native';
+import { useShallow } from 'zustand/shallow';
 import { useTaskStore } from '../store/TaskStore';
 import { Category, Task } from '../types/task';
 import { formatDate, getCurrentWeekStart } from '../utils/weekHelper';
@@ -20,7 +21,24 @@ export default function WeeklyScreen() {
   const toggleComplete = useTaskStore((s) => s.toggleComplete);
   const deleteTask = useTaskStore((s) => s.deleteTask);
   const moveTask = useTaskStore((s) => s.moveTask);
-  const tasks = useTaskStore((s) => s.getActiveTasksByCategory(weekStartStr, activeCategory));
+
+  // Use useShallow to prevent infinite re-renders from new array references
+  const allTasks = useTaskStore(useShallow((s) => s.tasks));
+
+  // Compute filtered tasks with useMemo (stable reference)
+  const tasks = useMemo(
+    () =>
+      allTasks
+        .filter(
+          (t) =>
+            t.weekStart === weekStartStr &&
+            t.category === activeCategory &&
+            !t.isCompleted &&
+            !t.isDeleted
+        )
+        .sort((a, b) => a.sortOrder - b.sortOrder),
+    [allTasks, weekStartStr, activeCategory]
+  );
 
   const handleWeekChange = useCallback((newWeekStart: Date) => {
     setCurrentWeekStart(newWeekStart);
@@ -101,10 +119,8 @@ export default function WeeklyScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Week Selector */}
       <WeekSelector currentWeekStart={currentWeekStart} onWeekChange={handleWeekChange} />
 
-      {/* Category Tabs */}
       <View style={styles.tabBar}>
         {CATEGORIES.map((cat) => (
           <TouchableOpacity
@@ -113,10 +129,7 @@ export default function WeeklyScreen() {
             onPress={() => setActiveCategory(cat.key)}
           >
             <Text
-              style={[
-                styles.tabText,
-                activeCategory === cat.key && styles.tabTextActive,
-              ]}
+              style={[styles.tabText, activeCategory === cat.key && styles.tabTextActive]}
             >
               {cat.label}
             </Text>
@@ -124,9 +137,10 @@ export default function WeeklyScreen() {
         ))}
       </View>
 
-      {/* Task List */}
       {tasks.length === 0 ? (
-        <EmptyState message={`暂无${activeCategory === 'work' ? '工作' : '生活'}任务\n点击右下角 + 添加`} />
+        <EmptyState
+          message={`暂无${activeCategory === 'work' ? '工作' : '生活'}任务\n点击右下角 + 添加`}
+        />
       ) : (
         <FlatList
           data={tasks}
@@ -136,7 +150,6 @@ export default function WeeklyScreen() {
         />
       )}
 
-      {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => setFormVisible(true)}
@@ -145,7 +158,6 @@ export default function WeeklyScreen() {
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
 
-      {/* Task Form Modal */}
       <TaskForm
         visible={formVisible}
         initialCategory={activeCategory}

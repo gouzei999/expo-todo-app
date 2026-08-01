@@ -8,26 +8,6 @@ import { PRESET_COLORS } from '../utils/colors';
 
 const MAX_TITLE_LENGTH = 200;
 
-function isValidTask(task: unknown): task is Task {
-  if (!task || typeof task !== 'object') return false;
-  const t = task as Record<string, unknown>;
-  return (
-    typeof t.id === 'string' &&
-    t.id.length > 0 &&
-    typeof t.title === 'string' &&
-    t.title.length <= MAX_TITLE_LENGTH &&
-    (t.category === 'work' || t.category === 'life') &&
-    typeof t.weekStart === 'string' &&
-    /^\d{4}-\d{2}-\d{2}$/.test(t.weekStart) &&
-    typeof t.isCompleted === 'boolean' &&
-    (t.completedAt === null || typeof t.completedAt === 'string') &&
-    typeof t.backgroundColor === 'string' &&
-    typeof t.sortOrder === 'number' &&
-    typeof t.createdAt === 'string' &&
-    typeof t.isDeleted === 'boolean'
-  );
-}
-
 interface TaskState {
   tasks: Task[];
   addTask: (title: string, category: Category, weekStart: string, backgroundColor?: string) => void;
@@ -38,9 +18,6 @@ interface TaskState {
   updateSortOrder: (reorderedTasks: Task[]) => void;
   updateBackgroundColor: (id: string, color: string) => void;
   updateTaskTitle: (id: string, title: string) => void;
-  getActiveTasksByCategory: (weekStart: string, category: Category) => Task[];
-  getCompletedTasks: () => Task[];
-  getWeeklyTasks: (weekStart: string) => Task[];
 }
 
 export const useTaskStore = create<TaskState>()(
@@ -57,7 +34,6 @@ export const useTaskStore = create<TaskState>()(
         const trimmedTitle = title.trim().slice(0, MAX_TITLE_LENGTH);
         if (trimmedTitle.length === 0) return;
 
-        // Validate color is from preset list
         const safeColor =
           backgroundColor && PRESET_COLORS.includes(backgroundColor)
             ? backgroundColor
@@ -101,9 +77,7 @@ export const useTaskStore = create<TaskState>()(
 
       deleteTask: (id: string) => {
         set({
-          tasks: get().tasks.map((t) =>
-            t.id === id ? { ...t, isDeleted: true } : t
-          ),
+          tasks: get().tasks.map((t) => (t.id === id ? { ...t, isDeleted: true } : t)),
         });
       },
 
@@ -120,10 +94,15 @@ export const useTaskStore = create<TaskState>()(
         direction: 'up' | 'down'
       ) => {
         const state = get();
-        // Get sorted active tasks in the same category/week
-        const siblings = state
-          .getActiveTasksByCategory(weekStart, category)
-          .map((t) => ({ ...t }));
+        const siblings = state.tasks
+          .filter(
+            (t) =>
+              t.weekStart === weekStart &&
+              t.category === category &&
+              !t.isCompleted &&
+              !t.isDeleted
+          )
+          .sort((a, b) => a.sortOrder - b.sortOrder);
 
         const currentIndex = siblings.findIndex((t) => t.id === id);
         if (currentIndex === -1) return;
@@ -131,13 +110,11 @@ export const useTaskStore = create<TaskState>()(
         const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
         if (targetIndex < 0 || targetIndex >= siblings.length) return;
 
-        // Swap sort orders
         const currentOrder = siblings[currentIndex].sortOrder;
         const targetOrder = siblings[targetIndex].sortOrder;
         siblings[currentIndex].sortOrder = targetOrder;
         siblings[targetIndex].sortOrder = currentOrder;
 
-        // Update in the full tasks array
         const updatedMap = new Map<string, number>();
         siblings.forEach((t) => updatedMap.set(t.id, t.sortOrder));
 
@@ -170,41 +147,8 @@ export const useTaskStore = create<TaskState>()(
         const trimmed = title.trim().slice(0, MAX_TITLE_LENGTH);
         if (trimmed.length === 0) return;
         set({
-          tasks: get().tasks.map((t) =>
-            t.id === id ? { ...t, title: trimmed } : t
-          ),
+          tasks: get().tasks.map((t) => (t.id === id ? { ...t, title: trimmed } : t)),
         });
-      },
-
-      getActiveTasksByCategory: (weekStart: string, category: Category) => {
-        return get()
-          .tasks.filter(
-            (t) =>
-              t.weekStart === weekStart &&
-              t.category === category &&
-              !t.isCompleted &&
-              !t.isDeleted
-          )
-          .sort((a, b) => a.sortOrder - b.sortOrder);
-      },
-
-      getCompletedTasks: () => {
-        return get()
-          .tasks.filter((t) => t.isCompleted && !t.isDeleted)
-          .sort((a, b) => {
-            if (a.completedAt && b.completedAt) {
-              return (
-                new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
-              );
-            }
-            return 0;
-          });
-      },
-
-      getWeeklyTasks: (weekStart: string) => {
-        return get()
-          .tasks.filter((t) => t.weekStart === weekStart && !t.isDeleted)
-          .sort((a, b) => a.sortOrder - b.sortOrder);
       },
     }),
     {

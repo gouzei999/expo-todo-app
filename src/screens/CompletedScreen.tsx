@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   FlatList,
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { useShallow } from 'zustand/shallow';
 import { useTaskStore } from '../store/TaskStore';
 import { Task } from '../types/task';
 import TaskCard from '../components/TaskCard';
@@ -17,13 +18,28 @@ import { CATEGORIES } from '../constants';
 import { formatDateTime } from '../utils/dateFormatter';
 
 export default function CompletedScreen() {
-  const completedTasks = useTaskStore((s) => s.getCompletedTasks());
   const hardDeleteTask = useTaskStore((s) => s.hardDeleteTask);
   const toggleComplete = useTaskStore((s) => s.toggleComplete);
-  const tasks = useTaskStore((s) => s.tasks);
+
+  // Use useShallow to prevent infinite re-renders
+  const allTasks = useTaskStore(useShallow((s) => s.tasks));
+
+  // Compute completed tasks with useMemo
+  const completedTasks = useMemo(
+    () =>
+      allTasks
+        .filter((t) => t.isCompleted && !t.isDeleted)
+        .sort((a, b) => {
+          if (a.completedAt && b.completedAt) {
+            return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime();
+          }
+          return 0;
+        }),
+    [allTasks]
+  );
 
   const [reviewTaskId, setReviewTaskId] = useState<string | null>(null);
-  const reviewTask = reviewTaskId ? tasks.find((t) => t.id === reviewTaskId) : null;
+  const reviewTask = reviewTaskId ? allTasks.find((t) => t.id === reviewTaskId) : null;
 
   const openReview = useCallback((task: Task) => {
     setReviewTaskId(task.id);
@@ -97,17 +113,10 @@ export default function CompletedScreen() {
         />
       )}
 
-      {/* Review Modal */}
       <Modal visible={reviewTask !== null} animationType="slide">
         {reviewTask && (
           <ScrollView style={styles.modalContainer} contentContainerStyle={styles.modalContent}>
-            {/* Task Detail Card */}
-            <View
-              style={[
-                styles.card,
-                { backgroundColor: reviewTask.backgroundColor || '#FFF' },
-              ]}
-            >
+            <View style={[styles.card, { backgroundColor: reviewTask.backgroundColor || '#FFF' }]}>
               <Text style={styles.cardTitle}>{reviewTask.title}</Text>
               <View style={styles.metaRow}>
                 <View style={styles.metaItem}>
@@ -135,7 +144,6 @@ export default function CompletedScreen() {
               </View>
             </View>
 
-            {/* Review Section */}
             <View style={styles.reviewSection}>
               <Text style={styles.reviewTitle}>📝 复盘</Text>
               <Text style={styles.reviewHint}>
@@ -143,7 +151,6 @@ export default function CompletedScreen() {
               </Text>
             </View>
 
-            {/* Actions */}
             <View style={styles.actions}>
               <TouchableOpacity style={styles.restoreBtn} onPress={handleRestore}>
                 <Text style={styles.restoreBtnText}>🔄 恢复任务</Text>
@@ -189,7 +196,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingBottom: 40,
   },
-  // Modal styles
   modalContainer: {
     flex: 1,
     backgroundColor: '#F8F9FA',
