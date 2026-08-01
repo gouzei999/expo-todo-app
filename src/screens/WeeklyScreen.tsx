@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, FlatList } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/shallow';
 import { useTaskStore } from '../store/TaskStore';
 import { Category, Task } from '../types/task';
@@ -118,7 +119,7 @@ export default function WeeklyScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <WeekSelector currentWeekStart={currentWeekStart} onWeekChange={handleWeekChange} />
 
       <View style={styles.tabBar}>
@@ -164,7 +165,7 @@ export default function WeeklyScreen() {
         onClose={() => setFormVisible(false)}
         onSubmit={handleAddTask}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 

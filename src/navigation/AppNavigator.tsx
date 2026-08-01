@@ -18,12 +18,12 @@ export default function AppNavigator() {
           tabBarStyle: {
             borderTopWidth: 1,
             borderTopColor: '#E5E5E5',
-            paddingBottom: 8,
-            paddingTop: 8,
-            height: 60,
+            paddingBottom: 12,
+            paddingTop: 10,
+            height: 70,
           },
           tabBarLabelStyle: {
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: '500',
           },
         }}

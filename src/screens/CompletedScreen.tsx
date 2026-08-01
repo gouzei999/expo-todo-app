@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { useShallow } from 'zustand/shallow';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTaskStore } from '../store/TaskStore';
 import { Task } from '../types/task';
 import TaskCard from '../components/TaskCard';
@@ -94,7 +95,7 @@ export default function CompletedScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>已完成任务</Text>
         <Text style={styles.subtitle}>
@@ -166,7 +167,7 @@ export default function CompletedScreen() {
           </ScrollView>
         )}
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
