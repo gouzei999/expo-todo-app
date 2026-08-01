@@ -18,6 +18,7 @@ interface TaskState {
   updateSortOrder: (reorderedTasks: Task[]) => void;
   updateBackgroundColor: (id: string, color: string) => void;
   updateTaskTitle: (id: string, title: string) => void;
+  updateTask: (id: string, updates: { title?: string; category?: Category; backgroundColor?: string }) => void;
 }
 
 export const useTaskStore = create<TaskState>()(
@@ -138,6 +139,40 @@ export const useTaskStore = create<TaskState>()(
         if (trimmed.length === 0) return;
         set({
           tasks: get().tasks.map((t) => (t.id === id ? { ...t, title: trimmed } : t)),
+        });
+      },
+
+      updateTask: (
+        id: string,
+        updates: { title?: string; category?: Category; backgroundColor?: string }
+      ) => {
+        const state = get();
+        const task = state.tasks.find((t) => t.id === id);
+        if (!task) return;
+
+        const safeTitle =
+          updates.title !== undefined
+            ? updates.title.trim().slice(0, MAX_TITLE_LENGTH)
+            : task.title;
+        if (safeTitle.length === 0) return;
+
+        const safeColor =
+          updates.backgroundColor !== undefined &&
+          PRESET_COLORS.includes(updates.backgroundColor)
+            ? updates.backgroundColor
+            : undefined;
+
+        set({
+          tasks: state.tasks.map((t) =>
+            t.id === id
+              ? {
+                  ...t,
+                  ...(updates.title !== undefined ? { title: safeTitle } : {}),
+                  ...(updates.category !== undefined ? { category: updates.category } : {}),
+                  ...(safeColor !== undefined ? { backgroundColor: safeColor } : {}),
+                }
+              : t
+          ),
         });
       },
     }),

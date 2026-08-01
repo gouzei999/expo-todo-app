@@ -15,12 +15,14 @@ export default function WeeklyScreen() {
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(getCurrentWeekStart());
   const [activeCategory, setActiveCategory] = useState<Category>('work');
   const [formVisible, setFormVisible] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const weekStartStr = formatDate(currentWeekStart);
   const todayWeekStart = formatDate(getCurrentWeekStart());
   const isCurrentWeek = weekStartStr === todayWeekStart;
 
   const addTask = useTaskStore((s) => s.addTask);
+  const updateTask = useTaskStore((s) => s.updateTask);
   const toggleComplete = useTaskStore((s) => s.toggleComplete);
   const deleteTask = useTaskStore((s) => s.deleteTask);
   const moveTask = useTaskStore((s) => s.moveTask);
@@ -67,6 +69,13 @@ export default function WeeklyScreen() {
       Alert.alert('操作任务', task.title, [
         { text: '取消', style: 'cancel' },
         {
+          text: '编辑任务',
+          onPress: () => {
+            setEditingTask(task);
+            setFormVisible(true);
+          },
+        },
+        {
           text: '删除任务',
           style: 'destructive',
           onPress: () => {
@@ -101,13 +110,23 @@ export default function WeeklyScreen() {
     [moveTask, tasks]
   );
 
-  const handleAddTask = useCallback(
+  const handleSubmitTask = useCallback(
     (title: string, category: Category, backgroundColor: string) => {
-      addTask(title, category, weekStartStr, backgroundColor);
+      if (editingTask) {
+        updateTask(editingTask.id, { title, category, backgroundColor });
+        setEditingTask(null);
+      } else {
+        addTask(title, category, weekStartStr, backgroundColor);
+      }
       setFormVisible(false);
     },
-    [addTask, weekStartStr]
+    [addTask, updateTask, weekStartStr, editingTask]
   );
+
+  const handleCloseForm = useCallback(() => {
+    setFormVisible(false);
+    setEditingTask(null);
+  }, []);
 
   const renderItem = useCallback(
     ({ item, index }: { item: Task; index: number }) => (
@@ -159,7 +178,10 @@ export default function WeeklyScreen() {
 
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => setFormVisible(true)}
+        onPress={() => {
+          setEditingTask(null);
+          setFormVisible(true);
+        }}
         activeOpacity={0.8}
       >
         <Text style={styles.fabText}>+</Text>
@@ -168,8 +190,18 @@ export default function WeeklyScreen() {
       <TaskForm
         visible={formVisible}
         initialCategory={activeCategory}
-        onClose={() => setFormVisible(false)}
-        onSubmit={handleAddTask}
+        onClose={handleCloseForm}
+        onSubmit={handleSubmitTask}
+        editingTask={
+          editingTask
+            ? {
+                id: editingTask.id,
+                title: editingTask.title,
+                category: editingTask.category,
+                backgroundColor: editingTask.backgroundColor,
+              }
+            : null
+        }
       />
     </SafeAreaView>
   );

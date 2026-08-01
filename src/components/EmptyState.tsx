@@ -7,10 +7,16 @@ interface EmptyStateProps {
 }
 
 export default function EmptyState({ message, emoji = '📋' }: EmptyStateProps) {
+  const lines = message.split('\n');
+
   return (
     <View style={styles.container}>
       <Text style={styles.emoji}>{emoji}</Text>
-      <Text style={styles.message}>{message}</Text>
+      {lines.map((line, index) => (
+        <Text key={index} style={styles.message}>
+          {line}
+        </Text>
+      ))}
     </View>
   );
 }

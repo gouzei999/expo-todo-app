@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -19,12 +19,38 @@ interface TaskFormProps {
   initialCategory: Category;
   onClose: () => void;
   onSubmit: (title: string, category: Category, backgroundColor: string) => void;
+  editingTask?: {
+    id: string;
+    title: string;
+    category: Category;
+    backgroundColor: string;
+  } | null;
 }
 
-export default function TaskForm({ visible, initialCategory, onClose, onSubmit }: TaskFormProps) {
+export default function TaskForm({
+  visible,
+  initialCategory,
+  onClose,
+  onSubmit,
+  editingTask,
+}: TaskFormProps) {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<Category>(initialCategory);
   const [backgroundColor, setBackgroundColor] = useState(DEFAULT_BACKGROUND_COLOR);
+
+  const isEditing = editingTask != null;
+
+  useEffect(() => {
+    if (editingTask) {
+      setTitle(editingTask.title);
+      setCategory(editingTask.category);
+      setBackgroundColor(editingTask.backgroundColor);
+    } else {
+      setTitle('');
+      setCategory(initialCategory);
+      setBackgroundColor(DEFAULT_BACKGROUND_COLOR);
+    }
+  }, [editingTask, initialCategory, visible]);
 
   const handleSubmit = () => {
     if (title.trim().length === 0) return;
@@ -50,7 +76,7 @@ export default function TaskForm({ visible, initialCategory, onClose, onSubmit }
         >
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             <View style={styles.handle} />
-            <Text style={styles.sheetTitle}>新增任务</Text>
+            <Text style={styles.sheetTitle}>{isEditing ? '编辑任务' : '新增任务'}</Text>
 
             {/* Title Input */}
             <Text style={styles.label}>任务名称</Text>
@@ -100,7 +126,7 @@ export default function TaskForm({ visible, initialCategory, onClose, onSubmit }
               onPress={handleSubmit}
               disabled={title.trim().length === 0}
             >
-              <Text style={styles.submitBtnText}>确认添加</Text>
+              <Text style={styles.submitBtnText}>{isEditing ? '保存修改' : '确认添加'}</Text>
             </TouchableOpacity>
           </Pressable>
         </KeyboardAvoidingView>
