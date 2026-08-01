@@ -6,8 +6,7 @@ import WeeklyScreen from '../screens/WeeklyScreen';
 import CompletedScreen from '../screens/CompletedScreen';
 
 const Tab = createBottomTabNavigator();
-const ICON_SIZE = 26;
-const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 90 : 80;
+const TAB_ICON_SIZE = 28;
 
 export default function AppNavigator() {
   return (
@@ -20,16 +19,14 @@ export default function AppNavigator() {
           tabBarStyle: {
             borderTopWidth: 1,
             borderTopColor: '#E5E5E5',
-            paddingBottom: Platform.OS === 'ios' ? 28 : 16,
-            paddingTop: 10,
-            height: TAB_BAR_HEIGHT,
+            paddingBottom: 20,
+            paddingTop: 12,
+            height: Platform.OS === 'ios' ? 90 : 80,
           },
           tabBarLabelStyle: {
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: '600',
-          },
-          tabBarIconStyle: {
-            marginTop: 2,
+            marginTop: 4,
           },
         }}
       >
@@ -39,7 +36,9 @@ export default function AppNavigator() {
           options={{
             tabBarLabel: '本周任务',
             tabBarIcon: ({ color }) => (
-              <Text style={{ fontSize: ICON_SIZE, color }}>📋</Text>
+              <Text style={{ fontSize: TAB_ICON_SIZE, color, lineHeight: TAB_ICON_SIZE + 4 }}>
+                📋
+              </Text>
             ),
           }}
         />
@@ -49,7 +48,9 @@ export default function AppNavigator() {
           options={{
             tabBarLabel: '已完成',
             tabBarIcon: ({ color }) => (
-              <Text style={{ fontSize: ICON_SIZE, color }}>✅</Text>
+              <Text style={{ fontSize: TAB_ICON_SIZE, color, lineHeight: TAB_ICON_SIZE + 4 }}>
+                ✅
+              </Text>
             ),
           }}
         />

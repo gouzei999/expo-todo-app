@@ -17,28 +17,32 @@ export default function WeeklyScreen() {
   const [formVisible, setFormVisible] = useState(false);
 
   const weekStartStr = formatDate(currentWeekStart);
+  const todayWeekStart = formatDate(getCurrentWeekStart());
+  const isCurrentWeek = weekStartStr === todayWeekStart;
 
   const addTask = useTaskStore((s) => s.addTask);
   const toggleComplete = useTaskStore((s) => s.toggleComplete);
   const deleteTask = useTaskStore((s) => s.deleteTask);
   const moveTask = useTaskStore((s) => s.moveTask);
 
-  // Use useShallow to prevent infinite re-renders from new array references
   const allTasks = useTaskStore(useShallow((s) => s.tasks));
 
-  // Compute filtered tasks with useMemo (stable reference)
+  // Show all unfinished tasks from current + past weeks when viewing current week.
+  // When viewing a past week, only show that week's tasks.
   const tasks = useMemo(
     () =>
       allTasks
-        .filter(
-          (t) =>
-            t.weekStart === weekStartStr &&
-            t.category === activeCategory &&
-            !t.isCompleted &&
-            !t.isDeleted
-        )
+        .filter((t) => {
+          if (t.category !== activeCategory || t.isCompleted || t.isDeleted) return false;
+          if (isCurrentWeek) {
+            // Current week: show this week + all unfinished from past weeks
+            return t.weekStart <= weekStartStr;
+          }
+          // Past week: show only that week
+          return t.weekStart === weekStartStr;
+        })
         .sort((a, b) => a.sortOrder - b.sortOrder),
-    [allTasks, weekStartStr, activeCategory]
+    [allTasks, weekStartStr, activeCategory, isCurrentWeek]
   );
 
   const handleWeekChange = useCallback((newWeekStart: Date) => {
@@ -83,16 +87,18 @@ export default function WeeklyScreen() {
 
   const handleMoveUp = useCallback(
     (task: Task) => {
-      moveTask(task.id, task.weekStart, task.category, 'up');
+      const ids = tasks.map((t) => t.id);
+      moveTask(task.id, ids, 'up');
     },
-    [moveTask]
+    [moveTask, tasks]
   );
 
   const handleMoveDown = useCallback(
     (task: Task) => {
-      moveTask(task.id, task.weekStart, task.category, 'down');
+      const ids = tasks.map((t) => t.id);
+      moveTask(task.id, ids, 'down');
     },
-    [moveTask]
+    [moveTask, tasks]
   );
 
   const handleAddTask = useCallback(

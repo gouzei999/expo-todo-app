@@ -14,7 +14,7 @@ interface TaskState {
   toggleComplete: (id: string) => void;
   deleteTask: (id: string) => void;
   hardDeleteTask: (id: string) => void;
-  moveTask: (id: string, weekStart: string, category: Category, direction: 'up' | 'down') => void;
+  moveTask: (id: string, siblingIds: string[], direction: 'up' | 'down') => void;
   updateSortOrder: (reorderedTasks: Task[]) => void;
   updateBackgroundColor: (id: string, color: string) => void;
   updateTaskTitle: (id: string, title: string) => void;
@@ -89,39 +89,29 @@ export const useTaskStore = create<TaskState>()(
 
       moveTask: (
         id: string,
-        weekStart: string,
-        category: Category,
+        siblingIds: string[],
         direction: 'up' | 'down'
       ) => {
-        const state = get();
-        const siblings = state.tasks
-          .filter(
-            (t) =>
-              t.weekStart === weekStart &&
-              t.category === category &&
-              !t.isCompleted &&
-              !t.isDeleted
-          )
-          .sort((a, b) => a.sortOrder - b.sortOrder);
-
-        const currentIndex = siblings.findIndex((t) => t.id === id);
+        const currentIndex = siblingIds.indexOf(id);
         if (currentIndex === -1) return;
 
         const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-        if (targetIndex < 0 || targetIndex >= siblings.length) return;
+        if (targetIndex < 0 || targetIndex >= siblingIds.length) return;
 
-        const currentOrder = siblings[currentIndex].sortOrder;
-        const targetOrder = siblings[targetIndex].sortOrder;
-        siblings[currentIndex].sortOrder = targetOrder;
-        siblings[targetIndex].sortOrder = currentOrder;
+        const state = get();
+        const currentTask = state.tasks.find((t) => t.id === id);
+        const targetTask = state.tasks.find((t) => t.id === siblingIds[targetIndex]);
+        if (!currentTask || !targetTask) return;
 
-        const updatedMap = new Map<string, number>();
-        siblings.forEach((t) => updatedMap.set(t.id, t.sortOrder));
+        const currentOrder = currentTask.sortOrder;
+        const targetOrder = targetTask.sortOrder;
 
         set({
-          tasks: state.tasks.map((t) =>
-            updatedMap.has(t.id) ? { ...t, sortOrder: updatedMap.get(t.id)! } : t
-          ),
+          tasks: state.tasks.map((t) => {
+            if (t.id === id) return { ...t, sortOrder: targetOrder };
+            if (t.id === targetTask.id) return { ...t, sortOrder: currentOrder };
+            return t;
+          }),
         });
       },
 
