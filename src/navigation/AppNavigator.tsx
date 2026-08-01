@@ -28,18 +28,15 @@ export default function AppNavigator() {
             tabBarStyle: {
               borderTopWidth: 1,
               borderTopColor: '#E5E5E5',
-              height: 80,
-              paddingBottom: 16,
-              paddingTop: 8,
-              backgroundColor: '#FFF',
+              height: 90,
+              paddingBottom: 20,
+              paddingTop: 12,
+              backgroundColor: '#F0F4FF',
             },
             tabBarLabelStyle: {
-              fontSize: 13,
-              fontWeight: '600',
-              marginTop: 2,
-            },
-            tabBarItemStyle: {
-              paddingVertical: 4,
+              fontSize: 14,
+              fontWeight: '700',
+              marginTop: 4,
             },
           }}
         >
@@ -77,7 +74,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   icon: {
-    fontSize: 24,
-    lineHeight: 28,
+    fontSize: 28,
+    lineHeight: 32,
   },
 });
